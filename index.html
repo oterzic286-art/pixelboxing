@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="sr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PIXEL BOXING | Zvanični Sajt Igre</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Retro Arcade & Clean Body Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#0b0b0e',
+            bgCard: '#131318',
+            bgCardHover: '#1a1a22',
+            crimson: '#e62429',
+            crimsonBright: '#ff3b3f',
+            crimsonDark: '#8f1616',
+          },
+          fontFamily: {
+            pixel: ['"Press Start 2P"', 'monospace'],
+            sans: ['"Chakra Petch"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* Global Retro Arcade Styling & Scanlines */
+    body {
+      background-color: #0b0b0e;
+      color: #f3f4f6;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(230, 36, 41, 0.16) 0%, transparent 55%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 32px 32px, 32px 32px;
+    }
+
+    /* Subtle CRT Scanline Overlay */
+    .scanlines::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0, 0, 0, 0.22) 4px
+      );
+    }
+
+    /* Pixel Art Stepped Borders */
+    .pixel-box {
+      position: relative;
+      background-color: #131318;
+      border: 2px solid #2a2a35;
+      box-shadow:
+        0 0 0 2px #0b0b0e,
+        0 0 0 4px #2a2a35,
+        0 10px 25px -5px rgba(0, 0, 0, 0.8);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pixel-box:hover {
+      border-color: #e62429;
+      box-shadow:
+        0 0 0 2px #0b0b0e,
+        0 0 0 4px #e62429,
+        0 0 25px rgba(230, 36, 41, 0.28);
+    }
+
+    .pixel-box-red {
+      background-color: #151013;
+      border: 2px solid #e62429;
+      box-shadow:
+        0 0 0 2px #0b0b0e,
+        0 0 0 4px #8f1616,
+        0 0 30px rgba(230, 36, 41, 0.28);
+    }
+
+    /* Arcade Retro Buttons */
+    .btn-pixel-red {
+      background-color: #e62429;
+      color: #ffffff;
+      border: 2px solid #ff6b6e;
+      box-shadow:
+        0 4px 0 #8f1616,
+        0 0 20px rgba(230, 36, 41, 0.45);
+      transition: all 0.12s ease;
+    }
+
+    .btn-pixel-red:hover {
+      background-color: #ff3b3f;
+      transform: translateY(-2px);
+      box-shadow:
+        0 6px 0 #8f1616,
+        0 0 28px rgba(255, 59, 63, 0.65);
+    }
+
+    .btn-pixel-red:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #8f1616;
+    }
+
+    .btn-pixel-dark {
+      background-color: #181820;
+      color: #f3f4f6;
+      border: 2px solid #3b3b4b;
+      box-shadow: 0 4px 0 #09090c;
+      transition: all 0.12s ease;
+    }
+
+    .btn-pixel-dark:hover {
+      border-color: #e62429;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #8f1616;
+    }
+
+    .btn-pixel-dark:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #09090c;
+    }
+
+    /* Title Neon Red Glow */
+    .title-glow {
+      text-shadow:
+        4px 4px 0px #7a1111,
+        0 0 24px rgba(230, 46, 45, 0.65);
+    }
+
+    /* Crisp Pixel Rendering for Canvas */
+    canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Blinking Cursor / Arcade Text */
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .animate-blink {
+      animation: blink 1s infinite;
+    }
+  </style>
+</head>
+<body class="scanlines font-sans antialiased selection:bg-crimson selection:text-white">
+
+  <!-- ==================== TOP NAVIGATION ==================== -->
+  <header class="sticky top-0 z-30 bg-[#0b0b0e]/95 backdrop-blur-md border-b-2 border-[#23232d]">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <a href="#pocetna" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 bg-crimson flex items-center justify-center rounded-sm border-2 border-[#ff7b73] shadow-[0_0_12px_rgba(230,46,45,0.6)] group-hover:scale-105 transition-transform">
+          <!-- Pixel Glove Icon SVG -->
+          <svg class="w-5 h-5 text-white" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4 2h8v2h2v6h-2v2H5v2H3v-4H2V4h2V2zm2 3v2h2V5H6z"/>
+          </svg>
+        </div>
+        <span class="font-pixel text-xs sm:text-sm md:text-base tracking-wider text-white">
+          PIXEL <span class="text-crimsonBright">BOXING</span>
+        </span>
+      </a>
+
+      <!-- Desktop Menu -->
+      <nav class="hidden lg:flex items-center gap-6 text-xs font-pixel">
+        <a href="#pocetna" class="text-gray-300 hover:text-crimsonBright transition-colors">POČETNA</a>
+        <a href="#prica" class="text-gray-300 hover:text-crimsonBright transition-colors">PRIČA</a>
+        <a href="#karakter" class="text-gray-300 hover:text-crimsonBright transition-colors">KARAKTER</a>
+        <a href="#gejmplej" class="text-gray-300 hover:text-crimsonBright transition-colors">GEJMPLEJ</a>
+        <a href="#timeline" class="text-gray-300 hover:text-crimsonBright transition-colors">TIMELINE</a>
+        <a href="#tim" class="text-gray-300 hover:text-crimsonBright transition-colors">TIM</a>
+        <a href="#mreze" class="text-crimsonBright hover:text-white transition-colors">MREŽE</a>
+      </nav>
+
+      <!-- Mobile Menu Toggle -->
+      <button id="mobileMenuBtn" aria-label="Otvori meni" class="lg:hidden p-2.5 rounded-sm bg-[#16161d] border-2 border-[#2e2e3a] text-white hover:border-crimson">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="square" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Navigation Dropdown -->
+    <div id="mobileMenu" class="hidden lg:hidden bg-[#101015] border-b-2 border-crimson px-4 py-4">
+      <div class="flex flex-col gap-3 font-pixel text-xs">
+        <a href="#pocetna" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ POČETNA</a>
+        <a href="#prica" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ PRIČA</a>
+        <a href="#karakter" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ KARAKTER</a>
+        <a href="#gejmplej" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ GEJMPLEJ</a>
+        <a href="#timeline" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ TIMELINE</a>
+        <a href="#tim" class="mobile-link py-2 text-gray-200 hover:text-crimsonBright">▶ TIM</a>
+        <a href="#mreze" class="mobile-link py-2 text-crimsonBright hover:text-white">▶ DRUŠTVENE MREŽE</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== 1. HERO SECTION ==================== -->
+  <section id="pocetna" class="relative pt-10 pb-20 sm:pt-16 sm:pb-28 px-4 sm:px-6 overflow-hidden">
+    <!-- Decorative Red Ambient Glow -->
+    <div class="absolute top-1/3 right-1/4 w-72 h-72 bg-crimson/20 rounded-full blur-[110px] pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <!-- Left Column: Title, Tagline, CTAs -->
+      <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+        <div class="inline-flex items-center gap-2.5 px-3.5 py-2 bg-[#181214] border-2 border-crimson/70 rounded-sm">
+          <span class="w-2.5 h-2.5 bg-crimsonBright inline-block animate-pulse"></span>
+          <span class="font-pixel text-[10px] sm:text-xs text-crimsonBright tracking-wider">2D PIXEL ART HEAVYWEIGHT BOXING GAME</span>
+        </div>
+
+        <h1 class="font-pixel text-3xl sm:text-5xl md:text-6xl leading-tight text-white title-glow">
+          PIXEL<br />
+          <span class="text-crimsonBright">BOXING</span>
+        </h1>
+
+        <p class="text-gray-300 text-base sm:text-lg md:text-xl max-w-2xl mx-auto lg:mx-0 leading-relaxed font-semibold">
+          Bori se za porodicu. Osvoji titulu svetskog šampiona u teškoj kategoriji.
+        </p>
+
+        <p class="text-gray-400 text-sm sm:text-base max-w-xl mx-auto lg:mx-0">
+          Uđi u ring kao <strong class="text-white">Rico Rodrigez</strong> u brutalnoj 2D pixel-art bokserskoj igri od 5 rundi gde svaki udarac odlučuje o pobedniku — nokautom ili odlukom sudija.
+        </p>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+          <button id="openTrailerBtn" class="btn-pixel-red w-full sm:w-auto px-6 py-4 rounded-sm font-pixel text-xs sm:text-sm flex items-center justify-center gap-3 cursor-pointer">
+            <span>▶</span>
+            <span>POGLEDAJ TRAILER</span>
+          </button>
+
+          <a href="#prica" class="btn-pixel-dark w-full sm:w-auto px-6 py-4 rounded-sm font-pixel text-xs sm:text-sm flex items-center justify-center gap-3">
+            <span>ISTRAŽI IGRU</span>
+            <span>↓</span>
+          </a>
+        </div>
+
+        <!-- Mini Arcade Stats Strip -->
+        <div class="pt-4 grid grid-cols-3 gap-3 max-w-md mx-auto lg:mx-0">
+          <div class="bg-[#121217] border border-[#282834] p-3 rounded-sm text-center">
+            <div class="font-pixel text-crimsonBright text-sm sm:text-base">5</div>
+            <div class="text-[11px] text-gray-400 uppercase tracking-wider mt-1">Rundi</div>
+          </div>
+          <div class="bg-[#121217] border border-[#282834] p-3 rounded-sm text-center">
+            <div class="font-pixel text-white text-sm sm:text-base">KO / PTS</div>
+            <div class="text-[11px] text-gray-400 uppercase tracking-wider mt-1">Pobeda</div>
+          </div>
+          <div class="bg-[#121217] border border-[#282834] p-3 rounded-sm text-center">
+            <div class="font-pixel text-crimsonBright text-sm sm:text-base">2D</div>
+            <div class="text-[11px] text-gray-400 uppercase tracking-wider mt-1">Pixel Art</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Rico Rodrigez Pixel Ring Showcase -->
+      <div class="lg:col-span-5 flex justify-center">
+        <div class="pixel-box-red rounded-sm p-4 sm:p-6 w-full max-w-sm bg-gradient-to-b from-[#191216] to-[#0f0f14]">
+          <!-- Top Arcade Ring Bar -->
+          <div class="flex items-center justify-between border-b-2 border-[#2d1e22] pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-crimsonBright inline-block"></span>
+              <span class="font-pixel text-[10px] text-gray-300">PLAYER 1</span>
+            </div>
+            <span class="font-pixel text-[10px] text-crimsonBright">HEAVYWEIGHT</span>
+          </div>
+
+          <!-- Ring Canvas Container -->
+          <div class="relative bg-[#17171f] border-2 border-[#323240] rounded-sm overflow-hidden flex flex-col items-center justify-center py-4">
+            <!-- Ring Ropes Background Decoration -->
+            <div class="absolute inset-x-0 top-10 h-1 bg-crimson/50"></div>
+            <div class="absolute inset-x-0 top-20 h-1 bg-white/25"></div>
+            <div class="absolute inset-x-0 top-32 h-1 bg-crimson/50"></div>
+            <div class="absolute inset-x-0 bottom-0 h-14 bg-[#22222d] border-t-2 border-[#39394a]"></div>
+
+            <!-- Rico Rodrigez Animated Pixel Sprite Canvas -->
+            <canvas id="heroRicoCanvas" width="220" height="320" class="relative z-10 w-48 sm:w-56 h-auto"></canvas>
+          </div>
+
+          <!-- Fighter Plate Below Canvas -->
+          <div class="mt-4 bg-[#0d0d11] border border-[#2b2b36] p-3 rounded-sm flex items-center justify-between gap-2">
+            <div>
+              <div class="font-pixel text-xs text-white">RICO RODRIGEZ</div>
+              <div class="text-xs text-gray-400 mt-1">Gard spreman • Klikni za seriju</div>
+            </div>
+            <button id="punchDemoBtn" title="Testiraj levi/desni udarac" class="px-3 py-2.5 bg-crimson hover:bg-crimsonBright text-white font-pixel text-[10px] rounded-sm border border-[#ff8078] cursor-pointer transition-colors shrink-0">
+              JAB! / UDARAC
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 2. STORY SECTION ==================== -->
+  <section id="prica" class="py-16 sm:py-24 px-4 sm:px-6 border-t-2 border-[#1d1d26] bg-[#0d0d11]">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="font-pixel text-xs text-crimsonBright tracking-widest uppercase">KAMPANJA & MOTIV</span>
+        <h2 class="font-pixel text-2xl sm:text-4xl text-white mt-3">PRIČA</h2>
+        <div class="w-24 h-1.5 bg-crimson mx-auto mt-4"></div>
+      </div>
+
+      <div class="pixel-box rounded-sm p-6 sm:p-10 md:p-12 relative overflow-hidden">
+        <!-- Decorative Corner Pixel Accents -->
+        <div class="absolute top-0 left-0 w-4 h-4 bg-crimson"></div>
+        <div class="absolute top-0 right-0 w-4 h-4 bg-crimson"></div>
+        <div class="absolute bottom-0 left-0 w-4 h-4 bg-crimson"></div>
+        <div class="absolute bottom-0 right-0 w-4 h-4 bg-crimson"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <!-- Heart / Motivation Visual -->
+          <div class="md:col-span-4 flex flex-col items-center justify-center bg-[#0f0f14] border-2 border-[#262632] p-6 rounded-sm text-center">
+            <!-- Pixel Heart SVG -->
+            <svg class="w-20 h-20 text-crimsonBright drop-shadow-[0_0_15px_rgba(255,59,48,0.6)] animate-pulse" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 3h3v1h2v1h2V4h2V3h3v1h1v4h-1v2h-2v2h-2v2H9v1H7v-1H6v-2H4v-2H2V8H1V4h1V3z"/>
+            </svg>
+            <div class="font-pixel text-xs text-white mt-4">OPERACIJA SRCA</div>
+            <p class="text-xs text-gray-400 mt-2">Jedini cilj: Sakupiti novac pre nego što bude kasno.</p>
+          </div>
+
+          <!-- Narrative Text -->
+          <div class="md:col-span-8 space-y-5 text-gray-300 leading-relaxed text-base sm:text-lg">
+            <div class="inline-block px-3 py-1 bg-crimson/20 border border-crimson text-crimsonBright font-pixel text-[10px]">
+              POGLAVLJE I: BORBA ZA ŽIVOT
+            </div>
+
+            <p>
+              <strong class="text-white">Rico Rodrigez</strong> nikada nije ušao u ring zbog slave, kamera ili zlatnih pojaseva. Njegova borba počinje izvan konopaca — u bolničkoj sobi gde njegovoj majci hitno treba <span class="text-crimsonBright font-semibold">operacija srca</span> koja košta više nego što bi ikada mogao da zaradi običnim poslom.
+            </p>
+
+            <p>
+              Suočen sa vremenom koje ističe, Rico navlači svoje crvene rukavice i ulazi u surovi svet teške kategorije. Svaki meč je bitka na sve ili ništa, a svaki osvojeni dolar korak bliže spasu njegove majke.
+            </p>
+
+            <p class="text-white font-medium border-l-4 border-crimson pl-4 bg-[#16161d] py-3 pr-3">
+              „U ovom ringu ne primam udarce samo za sebe. Uradiću sve što je potrebno da pobedim, zaradim novac i postanem najbolji heavyweight champion na svetu.“
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. CHARACTER & GAMEPLAY RULES ==================== -->
+  <section id="karakter" class="py-16 sm:py-24 px-4 sm:px-6 border-t-2 border-[#1d1d26]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="font-pixel text-xs text-crimsonBright tracking-widest">BORAC & PRAVILA RINGA</span>
+        <h2 class="font-pixel text-2xl sm:text-4xl text-white mt-3">KARAKTER & GEJMPLEJ</h2>
+        <div class="w-24 h-1.5 bg-crimson mx-auto mt-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <!-- Character Card: Rico Rodrigez -->
+        <div class="lg:col-span-6 pixel-box rounded-sm p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#252530] pb-4">
+              <div>
+                <span class="font-pixel text-[10px] text-crimsonBright">GLAVNI LIK</span>
+                <h3 class="font-pixel text-lg sm:text-xl text-white mt-1">RICO RODRIGEZ</h3>
+              </div>
+              <span class="px-3 py-1.5 bg-crimson text-white font-pixel text-[10px] rounded-sm">
+                HEAVYWEIGHT
+              </span>
+            </div>
+
+            <div class="mt-6 grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+              <!-- Pixel Portrait Box -->
+              <div class="sm:col-span-5 bg-[#181820] border-2 border-[#2e2e3b] rounded-sm p-3 flex justify-center">
+                <canvas id="cardRicoCanvas" width="160" height="230" class="w-36 h-auto"></canvas>
+              </div>
+
+              <!-- Fighter Bio & Attributes -->
+              <div class="sm:col-span-7 space-y-3 text-sm">
+                <div class="flex justify-between border-b border-[#23232e] pb-2">
+                  <span class="text-gray-400">Kategorija:</span>
+                  <span class="text-white font-semibold">Teška (Heavyweight)</span>
+                </div>
+                <div class="flex justify-between border-b border-[#23232e] pb-2">
+                  <span class="text-gray-400">Stil borbe:</span>
+                  <span class="text-white font-semibold">Agresivni Brawler</span>
+                </div>
+                <div class="flex justify-between border-b border-[#23232e] pb-2">
+                  <span class="text-gray-400">Oprema:</span>
+                  <span class="text-crimsonBright font-semibold">Crvene rukavice & šorts</span>
+                </div>
+                <div class="pt-1">
+                  <span class="text-gray-400 block mb-1">Glavni motiv:</span>
+                  <span class="text-white font-medium">Operacija srca za majku & svetska titula</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pixel Stat Bars -->
+          <div class="mt-8 space-y-3.5 pt-5 border-t-2 border-[#252530]">
+            <div>
+              <div class="flex justify-between font-pixel text-[10px] mb-1.5">
+                <span class="text-gray-300">SNAGA UDARCA</span>
+                <span class="text-crimsonBright">90%</span>
+              </div>
+              <div class="w-full h-3 bg-[#0b0b0e] border border-[#323240] p-0.5">
+                <div class="h-full bg-crimson w-[90%]"></div>
+              </div>
+          <!-- Phase 5: Planned (Novi protivnici - bez Story moda) -->
+        <div class="relative pixel-box rounded-sm p-5 sm:p-6 opacity-95">
+          <div class="absolute -left-[29px] sm:-left-[39px] top-6 w-5 h-5 bg-[#2e2e3b] border-2 border-gray-500"></div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span class="font-pixel text-xs text-gray-400">FAZA 05</span>
+            <span class="px-2.5 py-1 bg-gray-800 border border-gray-600 text-gray-300 font-pixel text-[10px] rounded-sm">
+              ⏳ USKORO
+            </span>
+          </div>
+          <h3 class="font-pixel text-sm sm:text-base text-white">NOVI PROTIVNICI</h3>
+          <p class="text-gray-400 text-sm sm:text-base mt-2">
+            Dodavanje novih boksera na putu do Heavyweight titule, jedinstveni stilovi borbe svakog izazivača, balansiranje težine i finalno testiranje za osvajanje šampionskog pojasa.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5. DEVELOPMENT TEAM SECTION ==================== -->
+  <section id="tim" class="py-16 sm:py-24 px-4 sm:px-6 border-t-2 border-[#1d1d26]">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="font-pixel text-xs text-crimsonBright tracking-widest">KREATORI IGRE</span>
+        <h2 class="font-pixel text-2xl sm:text-4xl text-white mt-3">RAZVOJNI TIM</h2>
+        <div class="w-24 h-1.5 bg-crimson mx-auto mt-4"></div>
+        <p class="text-gray-400 text-sm sm:text-base mt-4">
+          Petorka koja stoji iza projekta <strong class="text-white">PIXEL BOXING</strong>.
+        </p>
+      </div>
+
+      <!-- 5 Team Members Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Mateja Obradović -->
+        <div class="pixel-box rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-crimson/20 border-2 border-crimson flex items-center justify-center rounded-sm text-crimsonBright font-pixel text-xs shrink-0">
+                MO
+              </div>
+              <div>
+                <h3 class="font-pixel text-xs sm:text-sm leading-snug text-white">MATEJA OBRADOVIĆ</h3>
+                <span class="text-xs text-crimsonBright font-semibold">Project Manager & Dev</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Project Manager</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Programiranje</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Crtanje</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Sound Effects</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Music</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ognjen Terzić -->
+        <div class="pixel-box rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-crimson/20 border-2 border-crimson flex items-center justify-center rounded-sm text-crimsonBright font-pixel text-xs shrink-0">
+                OT
+              </div>
+              <div>
+                <h3 class="font-pixel text-xs sm:text-sm leading-snug text-white">OGNJEN TERZIĆ</h3>
+                <span class="text-xs text-crimsonBright font-semibold">Web & Video Produkcija</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Web programiranje</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Trailer</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- David Radosavljević -->
+        <div class="pixel-box rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-crimson/20 border-2 border-crimson flex items-center justify-center rounded-sm text-crimsonBright font-pixel text-xs shrink-0">
+                DR
+              </div>
+              <div>
+                <h3 class="font-pixel text-xs sm:text-sm leading-snug text-white">DAVID RADOSAVLJEVIĆ</h3>
+                <span class="text-xs text-crimsonBright font-semibold">Dev, Art & QA</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Programiranje</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Crtanje</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Sound Effects</span>
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Game Tester</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milica Ratković -->
+        <div class="pixel-box rounded-sm p-6 flex flex-col justify-between sm:col-span-1 lg:col-start-1">
+          <div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-crimson/20 border-2 border-crimson flex items-center justify-center rounded-sm text-crimsonBright font-pixel text-xs shrink-0">
+                MR
+              </div>
+              <div>
+                <h3 class="font-pixel text-xs sm:text-sm leading-snug text-white">MILICA RATKOVIĆ</h3>
+                <span class="text-xs text-crimsonBright font-semibold">Social & Promo</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Media</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nikolija Milovanović -->
+        <div class="pixel-box rounded-sm p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 bg-crimson/20 border-2 border-crimson flex items-center justify-center rounded-sm text-crimsonBright font-pixel text-xs shrink-0">
+                NM
+              </div>
+              <div>
+                <h3 class="font-pixel text-xs sm:text-sm leading-snug text-white">NIKOLIJA MILOVANOVIĆ</h3>
+                <span class="text-xs text-crimsonBright font-semibold">Social & Promo</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <span class="px-2.5 py-1 bg-[#1b1b24] border border-[#323242] text-xs text-gray-200 rounded-sm">Media</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 6. SOCIAL MEDIA SECTION ==================== -->
+  <section id="mreze" class="py-16 sm:py-24 px-4 sm:px-6 border-t-2 border-[#1d1d26] bg-[#0d0d11]">
+    <div class="max-w-4xl mx-auto text-center">
+      <span class="font-pixel text-xs text-crimsonBright tracking-widest">BUDI DEO ZAJEDNICE</span>
+      <h2 class="font-pixel text-2xl sm:text-3xl md:text-4xl text-white mt-3">PRATI RAZVOJ IGRE</h2>
+      <div class="w-24 h-1.5 bg-crimson mx-auto mt-4"></div>
+      <p class="text-gray-400 text-sm sm:text-base mt-4 max-w-xl mx-auto">
+        Gledaj kratke klipove iz ringa, nove animacije Rica Rodrigeza i napredak projekta na našim zvaničnim profilima!
+      </p>
+
+      <div class="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <!-- TikTok Card -->
+        <div class="pixel-box rounded-sm p-6 sm:p-8 flex flex-col items-center text-center group">
+          <div class="w-16 h-16 bg-[#181822] border-2 border-crimson group-hover:bg-crimson transition-colors rounded-sm flex items-center justify-center mb-4">
+            <!-- TikTok SVG Icon -->
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+            </svg>
+          </div>
+          <h3 class="font-pixel text-base text-white">TIKTOK</h3>
+          <p class="text-crimsonBright font-mono text-sm mt-2">@pixelboxing_official</p>
+          <p class="text-gray-400 text-xs mt-2 mb-6">Devlog klipovi, nokauti i proces crtanja karaktera.</p>
+          <div class="w-full flex gap-2 mt-auto">
+            <a href="https://www.tiktok.com/@pixelboxing_official" target="_blank" rel="noopener noreferrer" class="btn-pixel-red flex-1 py-3 px-4 rounded-sm font-pixel text-[10px] text-center">
+              OTVORI TIKTOK ↗
+            </a>
+            <button onclick="copyHandle('@pixelboxing_official', 'TikTok')" class="btn-pixel-dark py-3 px-3 rounded-sm font-pixel text-[10px] cursor-pointer" title="Kopiraj nalog">
+              📋
+            </button>
+          </div>
+        </div>
+
+        <!-- Instagram Card -->
+        <div class="pixel-box rounded-sm p-6 sm:p-8 flex flex-col items-center text-center group">
+          <div class="w-16 h-16 bg-[#181822] border-2 border-crimson group-hover:bg-crimson transition-colors rounded-sm flex items-center justify-center mb-4">
+            <!-- Instagram SVG Icon -->
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </div>
+          <h3 class="font-pixel text-base text-white">INSTAGRAM</h3>
+          <p class="text-crimsonBright font-mono text-sm mt-2">@pixelboxing_official</p>
+          <p class="text-gray-400 text-xs mt-2 mb-6">Poster objave, najave novih boraca i timski story-ji.</p>
+          <div class="w-full flex gap-2 mt-auto">
+            <a href="https://www.instagram.com/pixelboxing_official" target="_blank" rel="noopener noreferrer" class="btn-pixel-red flex-1 py-3 px-4 rounded-sm font-pixel text-[10px] text-center">
+              OTVORI INSTAGRAM ↗
+            </a>
+            <button onclick="copyHandle('@pixelboxing_official', 'Instagram')" class="btn-pixel-dark py-3 px-3 rounded-sm font-pixel text-[10px] cursor-pointer" title="Kopiraj nalog">
+              📋
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast Notification for Copy Action -->
+      <div id="copyToast" class="fixed bottom-6 right-6 z-50 hidden bg-[#16161e] border-2 border-crimson text-white px-4 py-3 rounded-sm shadow-2xl font-pixel text-[10px]">
+        <span id="copyToastText">Kopirano!</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t-2 border-[#23232d] bg-[#08080a] py-10 px-4 sm:px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+      <div>
+        <div class="font-pixel text-sm text-white">
+          PIXEL <span class="text-crimsonBright">BOXING</span> — Školski projekat
+        </div>
+        <p class="text-xs text-gray-400 mt-2">
+          © 2026 Mateja Obradović, Ognjen Terzić, David Radosavljević, Milica Ratković & Nikolija Milovanović. Sva prava zadržana.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-5 font-pixel text-[10px] text-gray-400">
+        <a href="#pocetna" class="hover:text-crimsonBright transition-colors">POČETNA</a>
+        <a href="#prica" class="hover:text-crimsonBright transition-colors">PRIČA</a>
+        <a href="#karakter" class="hover:text-crimsonBright transition-colors">KARAKTER</a>
+        <a href="#timeline" class="hover:text-crimsonBright transition-colors">TIMELINE</a>
+        <a href="#tim" class="hover:text-crimsonBright transition-colors">TIM</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== INTERACTIVE TRAILER MODAL ==================== -->
+  <div id="trailerModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="pixel-box-red rounded-sm w-full max-w-3xl bg-[#101016] p-4 sm:p-6 relative">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b-2 border-[#2a2a36] pb-3 mb-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 bg-crimsonBright animate-pulse"></span>
+          <span class="font-pixel text-xs sm:text-sm text-white">PIXEL BOXING — OFFICIAL 4-ACT TRAILER</span>
+        </div>
+        <button id="closeTrailerBtn" class="px-3 py-1.5 bg-crimson hover:bg-crimsonBright text-white font-pixel text-xs rounded-sm cursor-pointer">
+          X
+        </button>
+      </div>
+
+      <!-- Interactive 4-Part Arcade Trailer Screen -->
+      <div class="relative bg-[#0b0b0e] border-2 border-[#333342] rounded-sm overflow-hidden">
+        <canvas id="trailerCanvas" width="640" height="340" class="w-full h-auto block"></canvas>
+      </div>
+
+      <!-- Modal Footer Info & Act Selector -->
+      <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="jumpTrailerAct(0)" class="px-2.5 py-1.5 bg-[#191922] hover:border-crimson border border-[#323242] text-white font-pixel text-[9px] rounded-sm cursor-pointer">1. MOTIV</button>
+          <button onclick="jumpTrailerAct(1)" class="px-2.5 py-1.5 bg-[#191922] hover:border-crimson border border-[#323242] text-white font-pixel text-[9px] rounded-sm cursor-pointer">2. TRENING</button>
+          <button onclick="jumpTrailerAct(2)" class="px-2.5 py-1.5 bg-[#191922] hover:border-crimson border border-[#323242] text-white font-pixel text-[9px] rounded-sm cursor-pointer">3. RING</button>
+          <button onclick="jumpTrailerAct(3)" class="px-2.5 py-1.5 bg-[#191922] hover:border-crimson border border-[#323242] text-white font-pixel text-[9px] rounded-sm cursor-pointer">4. ŠAMPION</button>
+        </div>
+        <button id="replayTrailerBtn" class="btn-pixel-dark px-4 py-2 rounded-sm font-pixel text-[10px] cursor-pointer shrink-0">
+          ↻ PONOVI TRAILER
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT: PIXEL ART SPRITE ENGINE & UI ==================== -->
+  <script>
+    // ---------------------------------------------------------
+    // 1. EXACT PIXEL-ART SPRITE MATRIX OF RICO RODRIGEZ
+    // ---------------------------------------------------------
+    const RICO_PALETTE = {
+      '.': null,         // Transparent
+      'B': '#121216',    // Black outline / pupils / mouth
+      'H': '#1c1c21',    // Dark spiky hair
+      'S': '#d9a066',    // Main skin tone
+      'D': '#b57b45',    // Muscle / skin shadow
+      'R': '#e62429',    // Bright red gloves / shorts / boots
+      'M': '#a81c1b',    // Darker red shading
+      'W': '#f8fafc',    // White eye / wrist tape / waistband / laces
+    };
+
+    // 18x34 pixel grid matching Rico Rodrigez's exact stance & proportions
+    const RICO_SPRITE_IDLE = [
+      "......HHHHHH......",
+      "....HHHHHHHHHH....",
+      "...HHHHHHHHHHHH...",
+      "....HHSSSSSSHH....",
+      "...BSSSSSSSSSSB...",
+      "...BSWBSSSBWSBB...",
+      "....SSSSSSSSSS....",
+      ".....SSBBBBSS.....",
+      "...DDSSSSSSSSDD...",
+      "..DDSSSSSSSSSSDD..",
+      ".DDDRRRRRRRRRRDDD.",
+      ".DDRRRRRRRRRRRRDD.",
+      ".DDRRRMRRRRRMRRDD.",
+      ".DDWWRRMRRRRMRWWD.",
+      ".DDWWRRRRRRRRRWWD.",
+      "..DDSSSDDDDSSSDD..",
+      "..DDSSSDDDDSSSDD..",
+      "...DDSSDDDDSSDD...",
+      "....WWWWWWWWWW....",
+      "...RRRRRRRRRRRR...",
+      "...RRRRRMMRRRRR...",
+      "...RRRRRRRRRRRR...",
+      "....RRRR..RRRR....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....RRRR..RRRR....",
+      "....RWWR..RWWR....",
+      "....RRRR..RRRR....",
+      "...RRRRR..RRRRR...",
+      "..RRRRRR..RRRRRR..",
+      "..MMMMMM..MMMMMM.."
+    ];
+
+    // Right-hand Jab Punch Frame
+    const RICO_SPRITE_PUNCH_RIGHT = [
+      "......HHHHHH......",
+      "....HHHHHHHHHH....",
+      "...HHHHHHHHHHHH...",
+      "....HHSSSSSSHH....",
+      "...BSSSSSSSSSSB...",
+      "...BSWBSSSBWSBB...",
+      "....SSSSSSSSSS....",
+      ".....SSBBBBSS.....",
+      "...DDSSSSSSSSDD...",
+      "..DDSSSSSSSSSSDD..",
+      ".DDDRRRRRRDDDDDDD.",
+      ".DDRRRRRRRRSSSSSD.",
+      ".DDRRRMRRRRRRRRRD.",
+      ".DDWWRRMRRRRRRRRD.",
+      ".DDWWRRRRRRRRRWWD.",
+      "..DDSSSDDDDSSSDD..",
+      "..DDSSSDDDDSSSDD..",
+      "...DDSSDDDDSSDD...",
+      "....WWWWWWWWWW....",
+      "...RRRRRRRRRRRR...",
+      "...RRRRRMMRRRRR...",
+      "...RRRRRRRRRRRR...",
+      "....RRRR..RRRR....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....RRRR..RRRR....",
+      "....RWWR..RWWR....",
+      "....RRRR..RRRR....",
+      "...RRRRR..RRRRR...",
+      "..RRRRRR..RRRRRR..",
+      "..MMMMMM..MMMMMM.."
+    ];
+
+    // Left-hand Cross/Hook Punch Frame
+    const RICO_SPRITE_PUNCH_LEFT = [
+      "......HHHHHH......",
+      "....HHHHHHHHHH....",
+      "...HHHHHHHHHHHH...",
+      "....HHSSSSSSHH....",
+      "...BSSSSSSSSSSB...",
+      "...BSWBSSSBWSBB...",
+      "....SSSSSSSSSS....",
+      ".....SSBBBBSS.....",
+      "...DDSSSSSSSSDD...",
+      "..DDSSSSSSSSSSDD..",
+      ".DDDDDDDRRRRRRDDD.",
+      ".DSSSSSRRRRRRRRDD.",
+      ".DRRRRRRRRRMRRRDD.",
+      ".DRRRRRRRRMRRWWDD.",
+      ".DWWRRRRRRRRRWWDD.",
+      "..DDSSSDDDDSSSDD..",
+      "..DDSSSDDDDSSSDD..",
+      "...DDSSDDDDSSDD...",
+      "....WWWWWWWWWW....",
+      "...RRRRRRRRRRRR...",
+      "...RRRRRMMRRRRR...",
+      "...RRRRRRRRRRRR...",
+      "....RRRR..RRRR....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....SDDS..SDDS....",
+      "....SSSS..SSSS....",
+      "....RRRR..RRRR....",
+      "....RWWR..RWWR....",
+      "....RRRR..RRRR....",
+      "...RRRRR..RRRRR...",
+      "..RRRRRR..RRRRRR..",
+      "..MMMMMM..MMMMMM.."
+    ];
+
+    // Helper function to draw a pixel matrix crisply onto any 2D canvas
+    function drawPixelSprite(ctx, matrix, offsetX, offsetY, pixelSize, flipX = false) {
+      const rows = matrix.length;
+      const cols = matrix[0].length;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const char = matrix[r][c];
+          const color = RICO_PALETTE[char];
+          if (!color) continue;
+
+          const drawCol = flipX ? (cols - 1 - c) : c;
+          const x = Math.round(offsetX + drawCol * pixelSize);
+          const y = Math.round(offsetY + r * pixelSize);
+
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, pixelSize, pixelSize);
+        }
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 2. HERO & CHARACTER CARD IDLE + ALTERNATING PUNCH LOOP
+    // ---------------------------------------------------------
+    const heroCanvas = document.getElementById('heroRicoCanvas');
+    const heroCtx = heroCanvas.getContext('2d');
+    const cardCanvas = document.getElementById('cardRicoCanvas');
+    const cardCtx = cardCanvas.getContext('2d');
+
+    let isPunching = false;
+    let punchTimer = 0;
+    let punchHand = 'right'; // Alternates between 'right' and 'left'
+
+    function triggerHeroPunch() {
+      isPunching = true;
+      punchTimer = 16;
+      punchHand = punchHand === 'right' ? 'left' : 'right';
+    }
+
+    document.getElementById('punchDemoBtn').addEventListener('click', triggerHeroPunch);
+    heroCanvas.addEventListener('click', triggerHeroPunch);
+
+    function animateRicoSprites(timestamp) {
+      const bounce = Math.sin(timestamp / 220) * 4;
+      let activeSprite = RICO_SPRITE_IDLE;
+
+      if (isPunching) {
+        activeSprite = punchHand === 'right' ? RICO_SPRITE_PUNCH_RIGHT : RICO_SPRITE_PUNCH_LEFT;
+        punchTimer--;
+        if (punchTimer <= 0) isPunching = false;
+      }
+
+      // Draw Hero Canvas
+      heroCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+      // Floor shadow under Rico
+      heroCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      heroCtx.fillRect(58, 295, 104, 10);
+
+      const shakeX = isPunching ? (punchHand === 'right' ? 6 : -6) : 0;
+      // Draw Rico (pixelSize = 8 -> 144x272)
+      drawPixelSprite(heroCtx, activeSprite, 38 + shakeX, 26 + bounce, 8);
+
+      // Pixel impact spark & text on punch
+      if (isPunching) {
+        const sparkX = punchHand === 'right' ? 168 : 16;
+        const sparkY = 115 + bounce;
+        heroCtx.fillStyle = '#ff3b3f';
+        heroCtx.fillRect(sparkX, sparkY, 12, 12);
+        heroCtx.fillStyle = '#facc15';
+        heroCtx.fillRect(sparkX + 4, sparkY - 8, 8, 8);
+        heroCtx.fillRect(sparkX + 4, sparkY + 12, 8, 8);
+        heroCtx.font = '12px "Press Start 2P", monospace';
+        heroCtx.fillStyle = '#ffffff';
+        heroCtx.fillText(punchHand === 'right' ? 'JAB!' : 'HOOK!', punchHand === 'right' ? 132 : 24, 92);
+      }
+
+      // Draw Character Card Canvas
+      cardCtx.clearRect(0, 0, cardCanvas.width, cardCanvas.height);
+      cardCtx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      cardCtx.fillRect(35, 212, 90, 8);
+      drawPixelSprite(cardCtx, RICO_SPRITE_IDLE, 26, 12 + bounce * 0.6, 6);
+
+      requestAnimationFrame(animateRicoSprites);
+    }
+
+    // ---------------------------------------------------------
+    // 3. MOBILE MENU & CLIPBOARD COPY
+    // ---------------------------------------------------------
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    mobileMenuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+
+    function copyHandle(handle, platform) {
+      const tempInput = document.createElement('input');
+      tempInput.value = handle;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      const toast = document.getElementById('copyToast');
+      const toastText = document.getElementById('copyToastText');
+      toastText.textContent = `${platform} nalog ${handle} kopiran!`;
+      toast.classList.remove('hidden');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2800);
+    }
+
+    // ---------------------------------------------------------
+    // 4. INTERACTIVE 4-PART ARCADE TRAILER MODAL
+    // Act 1: Bolest majke i motivacija (Frames 0 - 239)
+    // Act 2: Trening u sali (Frames 240 - 479)
+    // Act 3: Borba u ringu za titulu (Frames 480 - 719)
+    // Act 4: Suočavanje sa svetskim šampionom (Frames 720 - 960+)
+    // ---------------------------------------------------------
+    const trailerModal = document.getElementById('trailerModal');
+    const openTrailerBtn = document.getElementById('openTrailerBtn');
+    const closeTrailerBtn = document.getElementById('closeTrailerBtn');
+    const replayTrailerBtn = document.getElementById('replayTrailerBtn');
+    const trailerCanvas = document.getElementById('trailerCanvas');
+    const tCtx = trailerCanvas.getContext('2d');
+
+    let trailerActive = false;
+    let trailerFrame = 0;
+    let manualHitFlash = 0;
+
+    function resetTrailerState() {
+      trailerFrame = 0;
+      manualHitFlash = 0;
+    }
+
+    function jumpTrailerAct(actIndex) {
+      trailerFrame = actIndex * 240;
+      manualHitFlash = 0;
+    }
+
+    openTrailerBtn.addEventListener('click', () => {
+      trailerModal.classList.remove('hidden');
+      resetTrailerState();
+      trailerActive = true;
+    });
+
+    closeTrailerBtn.addEventListener('click', () => {
+      trailerModal.classList.add('hidden');
+      trailerActive = false;
+    });
+
+    replayTrailerBtn.addEventListener('click', resetTrailerState);
+
+    trailerCanvas.addEventListener('click', () => {
+      manualHitFlash = 12;
+    });
+
+    function drawPixelHeart(ctx, x, y, scale, beat) {
+      const heartMatrix = [
+        ".RR.RR.",
+        "RRRRRRR",
+        "RRRRRRR",
+        ".RRRRR.",
+        "..RRR..",
+        "...R..."
+      ];
+      const s = scale + (beat ? 1 : 0);
+      for (let r = 0; r < heartMatrix.length; r++) {
+        for (let c = 0; c < heartMatrix[r].length; c++) {
+          if (heartMatrix[r][c] === 'R') {
+            ctx.fillStyle = beat ? '#ff3b3f' : '#e62429';
+            ctx.fillRect(x + c * s, y + r * s, s, s);
+          }
+        }
+      }
+    }
+
+    function renderTrailerLoop() {
+      if (trailerActive) {
+        trailerFrame++;
+        if (trailerFrame > 980) trailerFrame = 0; // Loop trailer seamlessly
+
+        const w = trailerCanvas.width;
+        const h = trailerCanvas.height;
+        const act = Math.min(3, Math.floor(trailerFrame / 240));
+        const localFrame = trailerFrame % 240;
+
+        // Clear background
+        tCtx.fillStyle = '#0b0b10';
+        tCtx.fillRect(0, 0, w, h);
+
+        // Top Progress Indicator Bar across 4 Acts
+        tCtx.fillStyle = '#1e1e28';
+        tCtx.fillRect(0, 0, w, 6);
+        tCtx.fillStyle = '#e62429';
+        tCtx.fillRect(0, 0, (w * trailerFrame) / 980, 6);
+
+        if (act === 0) {
+          // ACT 1: BOLEST MAJKE I MOTIVACIJA
+          tCtx.fillStyle = '#14141d';
+          tCtx.fillRect(40, 50, w - 80, 220);
+          tCtx.strokeStyle = '#e62429';
+          tCtx.lineWidth = 3;
+          tCtx.strokeRect(40, 50, w - 80, 220);
+
+          // Heartbeat ECG Line
+          tCtx.strokeStyle = '#ff3b3f';
+          tCtx.lineWidth = 3;
+          tCtx.beginPath();
+          for (let x = 60; x < w - 60; x += 6) {
+            const pulse = Math.sin((x + trailerFrame * 6) * 0.08);
+            const spike = (Math.abs(((x + trailerFrame * 4) % 120) - 60) < 8) ? -28 : pulse * 4;
+            if (x === 60) tCtx.moveTo(x, 130 + spike);
+            else tCtx.lineTo(x, 130 + spike);
+          }
+          tCtx.stroke();
+
+          drawPixelHeart(tCtx, 292, 82, 8, Math.floor(trailerFrame / 15) % 2 === 0);
+
+          tCtx.fillStyle = '#ff3b3f';
+          tCtx.font = '12px "Press Start 2P", monospace';
+          tCtx.fillText('DEO 1/4: RAZLOG BORBE', 195, 34);
+
+          tCtx.fillStyle = '#ffffff';
+          tCtx.font = '13px "Press Start 2P", monospace';
+          tCtx.fillText('OPERACIJA SRCA ZA MAJKU', 165, 195);
+
+          tCtx.fillStyle = '#cbd5e1';
+          tCtx.font = '10px "Press Start 2P", monospace';
+          tCtx.fillText('RICO ULAZI U RING DA SPASI PORODICU', 145, 228);
+
+        } else if (act === 1) {
+          // ACT 2: TRENING U SALI
+          tCtx.fillStyle = '#16161f';
+          tCtx.fillRect(30, 48, w - 60, 230);
+
+          // Gym Floor
+          tCtx.fillStyle = '#252532';
+          tCtx.fillRect(30, 235, w - 60, 43);
+
+          // Heavy Punching Bag hanging from top
+          const bagHit = (localFrame % 36 < 10) || manualHitFlash > 0;
+          const bagAngle = bagHit ? 14 : Math.sin(localFrame * 0.1) * 3;
+          tCtx.fillStyle = '#64748b';
+          tCtx.fillRect(396, 48, 8, 35);
+          tCtx.fillStyle = '#e62429';
+          tCtx.fillRect(374 + bagAngle, 83, 52, 115);
+          tCtx.fillStyle = '#f8fafc';
+          tCtx.fillRect(374 + bagAngle, 100, 52, 8);
+
+          // Rico Training Punches
+          const bounce = Math.sin(localFrame * 0.35) * 3;
+          drawPixelSprite(
+            tCtx,
+            bagHit ? RICO_SPRITE_PUNCH_RIGHT : RICO_SPRITE_IDLE,
+            bagHit ? 255 : 240,
+            88 + bounce,
+            5
+          );
+
+          if (bagHit) {
+            tCtx.fillStyle = '#facc15';
+            tCtx.font = '13px "Press Start 2P", monospace';
+            tCtx.fillText('BAM!', 338, 115);
+          }
+
+          tCtx.fillStyle = '#ff3b3f';
+          tCtx.font = '12px "Press Start 2P", monospace';
+          tCtx.fillText('DEO 2/4: TRENING U SALI', 185, 34);
+
+          tCtx.fillStyle = '#ffffff';
+          tCtx.font = '10px "Press Start 2P", monospace';
+          tCtx.fillText('SVAKI UDARAC KORAK BLIŽE POBEDI', 165, 306);
+
+        } else if (act === 2) {
+          // ACT 3: BORBA U RINGU ZA TITULU (5 RUNDI / KO)
+          tCtx.fillStyle = '#1d1d29';
+          tCtx.fillRect(40, 220, w - 80, 95);
+          tCtx.strokeStyle = '#e62429';
+          tCtx.lineWidth = 4;
+          tCtx.strokeRect(40, 150, w - 80, 70);
+
+          tCtx.fillStyle = '#ff3b3f';
+          tCtx.font = '12px "Press Start 2P", monospace';
+          tCtx.fillText('DEO 3/4: BORBA U RINGU (5 RUNDI)', 145, 34);
+
+          const hitNow = (localFrame % 55 < 12) || manualHitFlash > 0;
+          const bounce = Math.sin(localFrame * 0.3) * 3;
+          drawPixelSprite(
+            tCtx,
+            hitNow ? RICO_SPRITE_PUNCH_RIGHT : RICO_SPRITE_IDLE,
+            hitNow ? 215 : 190,
+            95 + bounce,
+            6
+          );
+
+          const oppShake = hitNow ? (localFrame % 2 === 0 ? 8 : -8) : 0;
+          drawOpponentSprite(tCtx, 355 + oppShake, 95 - bounce, 6, '#2563eb', '#1d4ed8');
+
+          if (hitNow) {
+            tCtx.fillStyle = '#facc15';
+            tCtx.font = '14px "Press Start 2P", monospace';
+            tCtx.fillText('K.O. POWER!', 275, 115);
+          }
+
+          tCtx.fillStyle = '#ffffff';
+          tCtx.font = '10px "Press Start 2P", monospace';
+          tCtx.fillText('NOKAUT ILI POBEDA NA POENE!', 185, 304);
+
+        } else {
+          // ACT 4: SUOČAVANJE SA SVETSKIM ŠAMPIONOM
+          tCtx.fillStyle = '#181114';
+          tCtx.fillRect(30, 50, w - 60, 235);
+          tCtx.strokeStyle = '#facc15';
+          tCtx.lineWidth = 3;
+          tCtx.strokeRect(30, 50, w - 60, 235);
+
+          tCtx.fillStyle = '#facc15';
+          tCtx.font = '11px "Press Start 2P", monospace';
+          tCtx.fillText('DEO 4/4: HEAVYWEIGHT WORLD CHAMPIONSHIP', 105, 34);
+
+          // Golden Championship Belt in center
+          tCtx.fillStyle = '#111827';
+          tCtx.fillRect(265, 128, 110, 20);
+          tCtx.fillStyle = '#facc15';
+          tCtx.fillRect(300, 122, 40, 32);
+          tCtx.fillStyle = '#e62429';
+          tCtx.fillRect(312, 130, 16, 16);
+
+          const bounce = Math.sin(localFrame * 0.25) * 3;
+          // Rico on Left
+          drawPixelSprite(tCtx, RICO_SPRITE_IDLE, 135, 95 + bounce, 6, false);
+          // World Champion (Gold/Black gear) on Right
+          drawOpponentSprite(tCtx, 400, 95 - bounce, 6, '#eab308', '#a16207');
+
+          tCtx.fillStyle = '#ff3b3f';
+          tCtx.font = '16px "Press Start 2P", monospace';
+          tCtx.fillText('VS', 304, 106);
+
+          tCtx.fillStyle = '#ffffff';
+          tCtx.font = '11px "Press Start 2P", monospace';
+          tCtx.fillText('PIXEL BOXING — USKORO U RINGU!', 155, 312);
+        }
+
+        if (manualHitFlash > 0) manualHitFlash--;
+      }
+
+      requestAnimationFrame(renderTrailerLoop);
+    }
+
+    // Opponent Fighter Sprite with customizable trunks/gloves colors
+    function drawOpponentSprite(ctx, offsetX, offsetY, pixelSize, mainColor, shadeColor) {
+      const oppPalette = {
+        ...RICO_PALETTE,
+        'R': mainColor,
+        'M': shadeColor,
+        'S': '#eab676',
+        'D': '#c68b53',
+      };
+      const cols = RICO_SPRITE_IDLE[0].length;
+      for (let r = 0; r < RICO_SPRITE_IDLE.length; r++) {
+        for (let c = 0; c < cols; c++) {
+          const ch = RICO_SPRITE_IDLE[r][c];
+          const color = oppPalette[ch];
+          if (!color) continue;
+          const flipCol = cols - 1 - c;
+          ctx.fillStyle = color;
+          ctx.fillRect(
+            Math.round(offsetX + flipCol * pixelSize),
+            Math.round(offsetY + r * pixelSize),
+            pixelSize,
+            pixelSize
+          );
+        }
+      }
+    }
+
+    // Start animations once window is fully loaded
+    window.onload = function () {
+      requestAnimationFrame(animateRicoSprites);
+      requestAnimationFrame(renderTrailerLoop);
+    };
+  </script>
+</body>
+</html>
